@@ -63,7 +63,9 @@ def warn(msg: str):
 @app.command()
 def transform(
     datadir: str = settings.DATA_DIR.name,
-    spacy_language_model: str = settings.SPACY_LANGUAGE_MODEL,
+    language_model: str = settings.SPACY_LANGUAGE_MODEL,
+    stop_words: list[str] = settings.SPACY_EXTRA_STOP_WORDS,
+    entity_labels: list[str] = settings.SPACY_ENTITY_TYPES,
 ):
     """
     Transform prepared data into features for modelling.
@@ -71,14 +73,14 @@ def transform(
     :param datadir: Path to the data directory
     :param spacy_language_model: Name of the spacy language model to use
     """
-    if spacy_language_model not in util.get_installed_models():
-        warn(f"The spacy language model {spacy_language_model} is not installed")
+    if language_model not in util.get_installed_models():
+        warn(f"The spacy language model {language_model} is not installed")
         download = typer.confirm("Would you like to download the model?")
 
         if not download:
             error("Language model not available")
 
-        spacy(spacy_language_model)
+        spacy(language_model)
 
     with tqdm(total=6, desc="Adding features to data...") as progress:
         cleaned_df = dm.get_clean_data(datadir)
@@ -90,9 +92,9 @@ def transform(
         data = fm.add_features(
             cleaned_df,
             extracted_df,
-            settings.SPACY_LANGUAGE_MODEL,
-            settings.SPACY_EXTRA_STOP_WORDS,
-            settings.SPACY_ENTITY_TYPES,
+            language_model,
+            stop_words,
+            entity_labels,
         )
         data.to_csv(dm.get_transformed_data_path(datadir), index=False)
         progress.update(1)

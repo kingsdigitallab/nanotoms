@@ -61,11 +61,26 @@ def sidebar(datadir: str):
 
             if language_models:
                 with st.form("transform_form"):
-                    st.selectbox("Select language model", language_models)
+                    language_model = st.selectbox(
+                        "Select language model", language_models
+                    )
+
+                    stop_words = st.text_area(
+                        "Additional stop words",
+                        value=", ".join(settings.SPACY_EXTRA_STOP_WORDS),
+                    )
+
+                    labels = st.multiselect(
+                        "Select entity labels",
+                        options=spacy.load(language_model).get_pipe("ner").labels,
+                        default=settings.SPACY_ENTITY_TYPES,
+                    )
 
                     if st.form_submit_button("Transform data"):
                         with st.spinner("Transforming data"):
-                            cli.transform(datadir)
+                            cli.transform(
+                                datadir, language_model, stop_words.split(", "), labels
+                            )
 
     if dm.get_transformed_data(datadir) is not None:
         with st.expander("3. Train", expanded=False):

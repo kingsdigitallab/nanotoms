@@ -50,7 +50,6 @@ SPACY_ENTITY_TYPES: list[str] = [
     "GPE",
     "LOC",
     "NORP",
-    # "ORG",
     "PERSON",
 ]
 
