@@ -7,6 +7,7 @@ from typing import Optional
 
 import pandas as pd
 from gensim import corpora
+from gensim.models import LdaModel
 
 
 def get_raw_data(datadir: str) -> pd.DataFrame:
@@ -102,6 +103,10 @@ def get_bow_corpus_path(datadir: str) -> Path:
     return get_data_path(datadir, "1_interim", "corpus_bow.json")
 
 
+def get_model(datadir: str, suffix: str) -> LdaModel:
+    return LdaModel.load(get_model_path(datadir, suffix).as_posix())
+
+
 def get_model_path(datadir: str, suffix: str) -> Path:
     return get_data_path(datadir, "2_final", f"topic_model_{suffix}")
 
@@ -115,10 +120,13 @@ def get_final_data_path(datadir: str, suffix: str) -> Path:
 
 
 def list_final_data(datadir: str):
-    return [
-        f"{p.stem}, {lastModified(p)}"
+    final_data = [
+        (os.path.getmtime(p), p.stem, lastModified(p))
         for p in get_data_path(datadir, "2_final").glob("*.csv")
     ]
+    final_data.sort(key=lambda x: x[0], reverse=True)
+
+    return [f"{f[1]}, {f[2]}" for f in final_data]
 
 
 def dump_data(filepath: Path, data):
