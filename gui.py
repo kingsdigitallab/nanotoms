@@ -14,6 +14,7 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
     with st.sidebar:
         sidebar(datadir)
 
+    st.header("Data")
     with st.container():
         prepare_section(datadir)
 
@@ -147,15 +148,20 @@ def train_section(datadir: str):
         with st.expander(f"View transformed data, {modified}", expanded=False):
             show_data(data)
 
-        suffix = st.selectbox("Select final data", dm.list_final_data(datadir))
-        suffix = "".join(suffix.split(", ")[0].split("_")[1:])
+        st.header("Trained data/model")
 
-        final_data = dm.get_final_data(datadir, suffix)
-        if final_data is not None:
-            modified = dm.lastModified(dm.get_final_data_path(datadir, suffix))
+        suffix = st.selectbox("Select trained data", dm.list_final_data(datadir))
+        suffix = "_".join(suffix.split(", ")[0].split("_")[1:])
 
-            with st.expander(f"View final data, {suffix}, {modified}", expanded=False):
-                show_data(final_data)
+        with st.expander(f"View data", expanded=False):
+            data = dm.get_final_data(datadir, suffix)
+            if data is not None:
+                modified = dm.lastModified(dm.get_final_data_path(datadir, suffix))
+                show_data(data)
+
+        model = dm.get_model(datadir, suffix)
+        if model:
+            st.write(model.show_topics(formatted=False, num_words=50))
 
 
 def show_data(data: pd.DataFrame):
