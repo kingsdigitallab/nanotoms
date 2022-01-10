@@ -283,7 +283,8 @@ def tune(
 
         data = tm.add_topics_to_documents(model, bow_corpus, data, parameters["topics"])
         data.to_csv(
-            dm.get_final_data_path(datadir, str(parameters["topics"])), index=False
+            dm.get_final_data_path(datadir, f"tunned_{parameters['topics']}"),
+            index=False,
         )
 
         if show:
