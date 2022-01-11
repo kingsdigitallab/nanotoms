@@ -111,6 +111,10 @@ def get_model_path(datadir: str, suffix: str) -> Path:
     return get_data_path(datadir, "2_final", f"topic_model_{suffix}")
 
 
+def get_model_id2word(datadir: str, suffix: str) -> corpora.Dictionary:
+    return corpora.Dictionary.load(get_model_path(datadir, f"{suffix}.id2word").as_posix())
+
+
 def get_final_data(datadir: str, suffix: str) -> pd.DataFrame:
     return get_data(get_final_data_path(datadir, suffix))
 
