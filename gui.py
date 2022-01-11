@@ -1,6 +1,10 @@
+import numpy as np
 import pandas as pd
+import pyLDAvis
+import pyLDAvis.gensim_models
 import spacy
 import streamlit as st
+from streamlit import components
 
 import cli
 import settings
@@ -153,7 +157,7 @@ def train_section(datadir: str):
         suffix = st.selectbox("Select trained data", dm.list_final_data(datadir))
         suffix = "_".join(suffix.split(", ")[0].split("_")[1:])
 
-        with st.expander(f"View data", expanded=False):
+        with st.expander("View data", expanded=False):
             data = dm.get_final_data(datadir, suffix)
             if data is not None:
                 modified = dm.lastModified(dm.get_final_data_path(datadir, suffix))
@@ -161,7 +165,60 @@ def train_section(datadir: str):
 
         model = dm.get_model(datadir, suffix)
         if model:
-            st.write(model.show_topics(formatted=False, num_words=50))
+            with st.expander("View model"):
+                try:
+                    model_data = pyLDAvis.gensim_models.prepare(
+                        model,
+                        dm.get_bow_corpus(datadir),
+                        dm.get_model_id2word(datadir, suffix),
+                        n_jobs=2,
+                    )
+                    html = pyLDAvis.prepared_data_to_html(model_data)
+                    components.v1.html(html, height=800)
+                except Exception as e:
+                    st.error(e)
+
+            number_of_topics = model.get_topics().shape[0]
+
+            with st.expander("View top words in topics"):
+                number_of_words = st.slider(
+                    "Number of words",
+                    min_value=5,
+                    max_value=50,
+                    step=1,
+                    value=10,
+                )
+                topics = model.show_topics(
+                    number_of_topics, formatted=False, num_words=number_of_words
+                )
+
+                topics_data = []
+                for idx, topic in topics:
+                    topics_data.extend(
+                        [
+                            {"term": item[0], f"topic {idx:02n}": item[1]}
+                            for item in topic
+                        ]
+                    )
+
+                df = pd.DataFrame(topics_data).set_index("term")
+                st.bar_chart(df)
+
+            st.header("Explore objects")
+            pathway = st.slider(
+                "Pathway", min_value=0, max_value=number_of_topics - 1, step=1, value=0
+            )
+            sort_by = st.selectbox(
+                "Sort objects by", ["index", "title", f"topic:{pathway}"]
+            )
+
+            objects = data[~data[f"topic:{pathway}"].isin([np.nan])]
+            if sort_by != "index":
+                objects = objects.sort_values([sort_by], ascending=(sort_by == "title"))
+
+            for index, row in objects.iterrows():
+                st.subheader(row['title'])
+                st.write(row["description"])
 
 
 def show_data(data: pd.DataFrame):
