@@ -5,6 +5,7 @@ import pyLDAvis.gensim_models
 import spacy
 import streamlit as st
 from streamlit import components
+from wordcloud import WordCloud
 
 import cli
 import settings
@@ -209,15 +210,34 @@ def train_section(datadir: str):
                 "Pathway", min_value=0, max_value=number_of_topics - 1, step=1, value=0
             )
             sort_by = st.selectbox(
-                "Sort objects by", ["index", "title", f"topic:{pathway}"]
+                "Sort objects by",
+                [f"topic:{pathway}", "title", "index"],
             )
+
+            with st.expander("View keywords in pathway", expanded=False):
+                frequencies = {}
+                for topic, weight in model.show_topic(pathway, 50):
+                    frequencies[topic] = int(weight * 1000)
+
+                wc = WordCloud(
+                    background_color="white",
+                    width=1000,
+                    height=150,
+                    min_font_size=12,
+                )
+                wc.generate_from_frequencies(frequencies)
+                st.image(
+                    wc.to_image(),
+                    caption="Keywords in pathway",
+                    use_column_width="always",
+                )
 
             objects = data[~data[f"topic:{pathway}"].isin([np.nan])]
             if sort_by != "index":
                 objects = objects.sort_values([sort_by], ascending=(sort_by == "title"))
 
             for index, row in objects.iterrows():
-                st.subheader(row['title'])
+                st.subheader(row["title"])
                 st.write(row["description"])
 
 
