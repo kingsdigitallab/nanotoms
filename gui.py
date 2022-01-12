@@ -178,6 +178,7 @@ def pyldavis(datadir: str, model: LdaModel, model_name: str):
                 dm.get_bow_corpus(datadir),
                 dm.get_model_id2word(datadir, model_name),
                 n_jobs=2,
+                sort_topics=False,
             )
             html = pyLDAvis.prepared_data_to_html(model_data)
             components.v1.html(html, height=800)
