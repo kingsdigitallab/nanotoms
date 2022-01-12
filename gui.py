@@ -1,15 +1,19 @@
+import ast
+
 import numpy as np
 import pandas as pd
 import pyLDAvis
 import pyLDAvis.gensim_models
 import spacy
 import streamlit as st
+from gensim.models import LdaModel
 from streamlit import components
 from wordcloud import WordCloud
 
 import cli
 import settings
 from nanotoms import data as dm
+from nanotoms import train as tm
 
 
 def streamlit(datadir: str = settings.DATA_DIR.name):
@@ -21,20 +25,10 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
 
     st.header("Data")
     with st.container():
-        prepare_section(datadir)
+        data_section(datadir)
 
     with st.container():
-        transform_section(datadir)
-
-    with st.container():
-        train_section(datadir)
-
-    # data = dm.get_raw_data(datadir)
-    # if data_selectbox != "raw":
-    # data = dm.get_final_data(datadir, data_selectbox)
-
-    # st.header(f"{data_selectbox.title()} data")
-    # show_data(data)
+        trained_section(datadir)
 
 
 def sidebar(datadir: str):
@@ -120,9 +114,8 @@ def sidebar(datadir: str):
                         )
 
 
-def prepare_section(datadir: str):
+def data_section(datadir: str):
     data = dm.get_raw_data(datadir)
-
     if data is not None:
         with st.expander(
             f"View raw data, {dm.lastModified(dm.get_raw_data_path(datadir))}",
@@ -130,10 +123,7 @@ def prepare_section(datadir: str):
         ):
             show_data(data)
 
-
-def transform_section(datadir: str):
     data = dm.get_clean_data(datadir)
-
     if data is not None:
         modified = dm.lastModified(dm.get_clean_data_path(datadir))
 
@@ -143,102 +133,138 @@ def transform_section(datadir: str):
         ):
             show_data(data)
 
-
-def train_section(datadir: str):
     data = dm.get_transformed_data(datadir)
-
     if data is not None:
         modified = dm.lastModified(dm.get_transformed_data_path(datadir))
 
         with st.expander(f"View transformed data, {modified}", expanded=False):
             show_data(data)
 
-        st.header("Trained data/model")
 
-        suffix = st.selectbox("Select trained data", dm.list_final_data(datadir))
-        suffix = "_".join(suffix.split(", ")[0].split("_")[1:])
+def trained_section(datadir: str):
+    final_data = dm.list_final_data(datadir)
+    if not final_data:
+        return
 
-        with st.expander("View data", expanded=False):
-            data = dm.get_final_data(datadir, suffix)
-            if data is not None:
-                modified = dm.lastModified(dm.get_final_data_path(datadir, suffix))
-                show_data(data)
+    st.header("Trained data/model")
 
-        model = dm.get_model(datadir, suffix)
-        if model:
-            with st.expander("View model"):
-                try:
-                    model_data = pyLDAvis.gensim_models.prepare(
-                        model,
-                        dm.get_bow_corpus(datadir),
-                        dm.get_model_id2word(datadir, suffix),
-                        n_jobs=2,
-                    )
-                    html = pyLDAvis.prepared_data_to_html(model_data)
-                    components.v1.html(html, height=800)
-                except Exception as e:
-                    st.error(e)
+    model_name = st.selectbox("Select trained data", final_data)
+    model_name = "_".join(model_name.split(", ")[0].split("_")[1:])
 
-            number_of_topics = model.get_topics().shape[0]
+    with st.expander("View data", expanded=False):
+        data = dm.get_final_data(datadir, model_name)
+        if data is not None:
+            show_data(data)
 
-            with st.expander("View top words in topics"):
-                number_of_words = st.slider(
-                    "Number of words",
-                    min_value=5,
-                    max_value=50,
-                    step=1,
-                    value=10,
-                )
-                topics = model.show_topics(
-                    number_of_topics, formatted=False, num_words=number_of_words
-                )
+    model = dm.get_model(datadir, model_name)
+    if not model:
+        return
 
-                topics_data = []
-                for idx, topic in topics:
-                    topics_data.extend(
-                        [
-                            {"term": item[0], f"topic {idx:02n}": item[1]}
-                            for item in topic
-                        ]
-                    )
+    pyldavis(datadir, model, model_name)
+    topic_terms_chart(model)
 
-                df = pd.DataFrame(topics_data).set_index("term")
-                st.bar_chart(df)
+    with st.container():
+        explore_by_topic(data, model)
 
-            st.header("Explore objects")
-            pathway = st.slider(
-                "Pathway", min_value=0, max_value=number_of_topics - 1, step=1, value=0
+    with st.container():
+        explore_by_entities(data)
+
+
+def pyldavis(datadir: str, model: LdaModel, model_name: str):
+    with st.expander("View model"):
+        try:
+            model_data = pyLDAvis.gensim_models.prepare(
+                model,
+                dm.get_bow_corpus(datadir),
+                dm.get_model_id2word(datadir, model_name),
+                n_jobs=2,
             )
-            sort_by = st.selectbox(
-                "Sort objects by",
-                [f"topic:{pathway}", "title", "index"],
+            html = pyLDAvis.prepared_data_to_html(model_data)
+            components.v1.html(html, height=800)
+        except Exception as e:
+            st.error(e)
+
+
+def topic_terms_chart(model: LdaModel):
+    number_of_topics = tm.get_number_of_topics(model)
+
+    with st.expander("View top words in topics"):
+        number_of_words = st.slider(
+            "Number of words",
+            min_value=5,
+            max_value=50,
+            step=1,
+            value=10,
+        )
+        topics = model.show_topics(
+            number_of_topics, formatted=False, num_words=number_of_words
+        )
+
+        topics_data = []
+        for idx, topic in topics:
+            topics_data.extend(
+                [{"term": item[0], f"topic {idx:02n}": item[1]} for item in topic]
             )
 
-            with st.expander("View keywords in pathway", expanded=False):
-                frequencies = {}
-                for topic, weight in model.show_topic(pathway, 50):
-                    frequencies[topic] = int(weight * 1000)
+        df = pd.DataFrame(topics_data).set_index("term")
+        st.bar_chart(df)
 
-                wc = WordCloud(
-                    background_color="white",
-                    width=1000,
-                    height=150,
-                    min_font_size=12,
-                )
-                wc.generate_from_frequencies(frequencies)
-                st.image(
-                    wc.to_image(),
-                    caption="Keywords in pathway",
-                    use_column_width="always",
-                )
 
-            objects = data[~data[f"topic:{pathway}"].isin([np.nan])]
-            if sort_by != "index":
-                objects = objects.sort_values([sort_by], ascending=(sort_by == "title"))
+def explore_by_topic(data: pd.DataFrame, model: LdaModel):
+    st.header("Explore data by topic")
 
-            for index, row in objects.iterrows():
-                st.subheader(row["title"])
-                st.write(row["description"])
+    number_of_topics = tm.get_number_of_topics(model)
+
+    topic = st.slider(
+        "Topic", min_value=0, max_value=number_of_topics - 1, step=1, value=0
+    )
+
+    with st.expander("View terms in topic", expanded=False):
+        frequencies = {}
+        for term, weight in model.show_topic(topic, 50):
+            frequencies[term] = int(weight * 1000)
+
+        wc = WordCloud(
+            background_color="white",
+            width=1000,
+            height=150,
+            min_font_size=12,
+        )
+        wc.generate_from_frequencies(frequencies)
+        st.image(
+            wc.to_image(),
+            caption="Terms in topic",
+            use_column_width="always",
+        )
+
+    st.subheader("Objects")
+    sort_by = st.selectbox(
+        "Sort objects by",
+        [f"topic:{topic}", "title", "index"],
+    )
+
+    objects = data[~data[f"topic:{topic}"].isin([np.nan])]
+    if sort_by != "index":
+        objects = objects.sort_values([sort_by], ascending=(sort_by == "title"))
+
+    for _, row in objects.iterrows():
+        with st.expander(row["title"], expanded=False):
+            st.write(row["description"])
+
+
+def explore_by_entities(data: pd.DataFrame):
+    st.header("Explore data by entities")
+
+    entities = []
+    entities_df = data.filter(regex="^entity", axis=1)
+    for label, column in entities_df.iteritems():
+        label = label.split(":")[1]
+        for value in column.dropna().values:
+            entities.extend([f"{label}: {v}" for v in ast.literal_eval(value)])
+
+    entities = sorted(list(set(entities)))
+
+    st.multiselect("Select entities", options=entities)
 
 
 def show_data(data: pd.DataFrame):
