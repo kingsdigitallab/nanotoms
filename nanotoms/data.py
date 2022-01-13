@@ -82,6 +82,10 @@ def get_transformed_data_path(datadir: str) -> Path:
     return get_data_path(datadir, "1_interim", "transformed.csv")
 
 
+def get_descriptions_data_path(datadir: str) -> Path:
+    return get_data_path(datadir, "1_interim", "descriptions.txt")
+
+
 def get_text_corpus(datadir: str) -> list[list[str]]:
     return load_data(get_text_corpus_path(datadir))
 

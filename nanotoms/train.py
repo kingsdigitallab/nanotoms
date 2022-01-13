@@ -8,21 +8,6 @@ from gensim import corpora
 from gensim.models import CoherenceModel, LdaModel, LdaMulticore
 
 
-def get_min_number_of_topics(n: int) -> int:
-    min_n: int = 2
-
-    n = int(n / 2)
-
-    if n > 1:
-        return n
-
-    return min_n
-
-
-def get_max_number_of_topics(n: int) -> int:
-    return int(n * 1.5)
-
-
 # https://radimrehurek.com/gensim/models/ldamulticore.html
 def model(
     bow_corpus: list[list[tuple[int, int]]],

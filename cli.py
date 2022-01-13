@@ -99,6 +99,10 @@ def transform(
         data.to_csv(dm.get_transformed_data_path(datadir), index=False)
         progress.update(1)
 
+        descriptions = fm.get_descriptions(data)
+        with open(dm.get_descriptions_data_path(datadir), "w") as f:
+            f.writelines(descriptions)
+
         text_corpus = fm.text_corpus(data["lemmas"])
         dm.dump_data(dm.get_text_corpus_path(datadir), text_corpus)
         progress.update(1)
@@ -193,7 +197,10 @@ def train(
 @app.command()
 def tune(
     datadir: str = settings.DATA_DIR.name,
-    number_of_topics: int = settings.NUMBER_OF_TOPICS,
+    min_number_of_topics: int = settings.MIN_NUMBER_OF_TOPICS,
+    max_number_of_topics: int = settings.MAX_NUMBER_OF_TOPICS,
+    passes: int = settings.NUMBER_OF_PASSES,
+    minimum_probability: float = settings.TOPICS_MINIMUM_PROBABILITY,
     show: bool = typer.Option(
         ...,
         prompt="Print topics",
@@ -202,10 +209,12 @@ def tune(
 ):
     """
     Trune topic model. Iterate over different settings to try to improve the
-    trained model.
+    trained model. The tuned model may end with a different number of topics from the
+    one provided, because the model settings are tweaked to try to achieve the model
+    with the best score.
 
     :param datadir: Path to the data directory
-    :param number_of_topics: Number of topics to be extracted from the data
+    :param number_of_topics: The initial number of topics to be extracted
     :param show: Print the extracted topics?
     """
     data = dm.get_transformed_data(datadir)
@@ -216,13 +225,7 @@ def tune(
 
     text_corpus = dm.get_text_corpus(datadir)
 
-    number_of_topics = settings.NUMBER_OF_TOPICS
-
-    num_topics_range = range(
-        tm.get_min_number_of_topics(number_of_topics),
-        tm.get_max_number_of_topics(number_of_topics),
-        1,
-    )
+    num_topics_range = range(min_number_of_topics, max_number_of_topics, 1)
     alphas = list(np.arange(0.01, 1, 0.3))
     alphas.append("symmetric")
     alphas.append("asymmetric")
@@ -240,11 +243,11 @@ def tune(
                 trained_model = tm.model(
                     bow_corpus,
                     dict_corpus,
-                    passes=settings.NUMBER_OF_PASSES,
+                    passes=passes,
                     num_topics=num_topics,
                     alpha=alpha,
                     eta=eta,
-                    minimum_probability=settings.TOPICS_MINIMUM_PROBABILITY,
+                    minimum_probability=minimum_probability,
                 )
 
                 score = tm.coherence_score(
@@ -253,16 +256,6 @@ def tune(
                     dict_corpus,
                     settings.COHERENCE_MEASURE,
                 )
-
-                # alpha_str = f"{alpha:.2f}" if isinstance(alpha, float) else alpha
-                # eta_str = f"{eta:.2f}" if isinstance(eta, float) else eta
-
-                # num_topics_progress.label = (
-                # f"topics: {num_topics} "
-                # f"alpha: {alpha_str} "
-                # f"eta: {eta_str} "
-                # f"score: {score:.2f}"
-                # )
 
                 if score > max_score:
                     max_score = score

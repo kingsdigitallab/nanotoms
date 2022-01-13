@@ -53,11 +53,30 @@ SPACY_ENTITY_TYPES: list[str] = [
     "PERSON",
 ]
 
+
+def get_min_number_of_topics(n: int) -> int:
+    min_n: int = 2
+
+    n = int(n / 2)
+
+    if n > 1:
+        return n
+
+    return min_n
+
+
+def get_max_number_of_topics(n: int) -> int:
+    return int(n * 1.5)
+
+
 # https://radimrehurek.com/gensim/models/ldamulticore.html
 MINIMUM_NUMBER_OF_DOCS_WITH_TERM: int = 3
 NUMBER_OF_TOPICS: int = 10
+MIN_NUMBER_OF_TOPICS: int = get_min_number_of_topics(NUMBER_OF_TOPICS)
+MAX_NUMBER_OF_TOPICS: int = get_max_number_of_topics(NUMBER_OF_TOPICS)
 NUMBER_OF_PASSES: int = 10
 TOPICS_MINIMUM_PROBABILITY: float = 1 / NUMBER_OF_TOPICS * 1.5
+
 
 # https://radimrehurek.com/gensim/models/coherencemodel.html#gensim.models.coherencemodel.CoherenceModel
 # one of 'c_v', 'c_uci', 'c_npmi'
