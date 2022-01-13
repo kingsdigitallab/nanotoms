@@ -35,9 +35,16 @@ def add_features(
     data["lemmas"] = data["doc"].apply(get_lemmas)
 
     entities = data["doc"].apply(lambda x: get_entities(x, entity_types))
+    data["entities"] = entities.apply(
+        lambda x: [
+            f"{label.split(':')[1]}: {entity}"
+            for label, items in x.items()
+            for entity in items
+        ]
+    )
+
     entities_df = pd.DataFrame(entities.values.tolist())
     entities_df = entities_df[sorted(entities_df.columns)]
-
     data = data.join(entities_df)
 
     data = data.drop(columns=["doc"])
