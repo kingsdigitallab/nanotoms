@@ -1,5 +1,3 @@
-import ast
-
 import numpy as np
 import pandas as pd
 import pyLDAvis
@@ -7,12 +5,14 @@ import pyLDAvis.gensim_models
 import spacy
 import streamlit as st
 from gensim.models import LdaModel
+from happytransformer import GENSettings, HappyGeneration
 from streamlit import components
 from wordcloud import WordCloud
 
 import cli
 import settings
 from nanotoms import data as dm
+from nanotoms import generate as gm
 from nanotoms import train as tm
 
 
@@ -23,16 +23,19 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
     with st.sidebar:
         sidebar(datadir)
 
-    st.header("Data")
     with st.container():
         data_section(datadir)
 
     with st.container():
         trained_section(datadir)
 
+    with st.container():
+        generator_section()
+
 
 def sidebar(datadir: str):
     st.title("Configuration")
+    st.header("Topics")
 
     with st.expander("Data", expanded=False):
         uploaded_file = st.file_uploader("Upload new data", type=["csv"])
@@ -113,8 +116,35 @@ def sidebar(datadir: str):
                             datadir, number_of_topics, passes, minimum_probability
                         )
 
+    st.header("Generation")
+    with st.expander("Generator settings", expanded=False):
+        length = st.slider(
+            "Number of words", min_value=10, max_value=1000, step=10, value=100
+        )
+        no_repeat_ngram_size = st.slider(
+            "No repeat ngrams", min_value=0, max_value=5, value=2
+        )
+
+        temperature = st.slider(
+            "Temperature", min_value=0.1, max_value=1.0, step=0.1, value=0.7
+        )
+        top_k = st.slider("Top k", min_value=1, max_value=100, step=1, value=50)
+        early_stopping = st.checkbox(
+            "Stop at last full sentence (if possible)?", value=True
+        )
+
+        st.session_state.gen_settings = GENSettings(
+            do_sample=True,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+            max_length=length,
+            temperature=temperature,
+            top_k=top_k,
+        )
+
 
 def data_section(datadir: str):
+    st.header("Data")
+
     data = dm.get_raw_data(datadir)
     if data is not None:
         with st.expander(
@@ -276,6 +306,33 @@ def explore_by_entities(data: pd.DataFrame):
 
     objects = data[data["entities"].map(contains_entities)]
     show_objects(objects)
+
+
+def generator_section():
+    st.header("Text generator")
+
+    try:
+        prompt = st.text_input("Prompt", placeholder="Prompt to generate text")
+
+        if prompt:
+            result = gm.generate(get_generator(), get_generator_settings(), prompt)
+            if result:
+                st.write(result.text)
+    except Exception as e:
+        st.error(f"Error loading text generator model: {e}")
+
+
+def get_generator(
+    path: str = settings.TEXT_GENERATOR_MODEL_PATH,
+) -> HappyGeneration:
+    if "generator" not in st.session_state:
+        st.session_state.generator = gm.get_generator(path)
+
+    return st.session_state.generator
+
+
+def get_generator_settings() -> GENSettings:
+    return st.session_state.gen_settings
 
 
 if __name__ == "__main__":

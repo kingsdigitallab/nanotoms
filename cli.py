@@ -1,6 +1,7 @@
 import numpy as np
 import spacy.cli.download as spacy_download
 import typer
+from happytransformer import GENSettings
 from spacy import util
 from tqdm import tqdm
 
@@ -8,6 +9,7 @@ import settings
 from nanotoms import data as dm
 from nanotoms import etl
 from nanotoms import features as fm
+from nanotoms import generate as gm
 from nanotoms import train as tm
 from nanotoms import visualize as vm
 
@@ -282,6 +284,34 @@ def tune(
 
         if show:
             vm.print_topics(model, n=parameters["topics"], writer=typer.echo)
+
+
+@app.command()
+def generate(
+    prompt: str,
+    do_sample: bool = True,
+    no_repeat_ngram_size: int = 0,
+    max_length: int = 100,
+    temperature: float = 1.0,
+    top_k: int = 50,
+):
+    try:
+        generator = gm.get_generator(settings.TEXT_GENERATOR_MODEL_PATH)
+        result = gm.generate(
+            generator,
+            GENSettings(
+                do_sample=do_sample,
+                no_repeat_ngram_size=no_repeat_ngram_size,
+                max_length=max_length,
+                temperature=temperature,
+                top_k=top_k,
+            ),
+            prompt,
+        )
+
+        typer.echo(result.text)
+    except Exception as e:
+        error(f"Error loading text generator model: {e}")
 
 
 if __name__ == "__main__":
