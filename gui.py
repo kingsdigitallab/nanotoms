@@ -141,6 +141,10 @@ def data_section(datadir: str):
             show_data(data)
 
 
+def show_data(data: pd.DataFrame):
+    st.dataframe(data)
+
+
 def trained_section(datadir: str):
     final_data = dm.list_final_data(datadir)
     if not final_data:
@@ -238,7 +242,6 @@ def explore_by_topic(data: pd.DataFrame, model: LdaModel):
             use_column_width="always",
         )
 
-    st.subheader("Objects")
     sort_by = st.selectbox(
         "Sort objects by",
         [f"topic:{topic}", "title", "index"],
@@ -248,28 +251,31 @@ def explore_by_topic(data: pd.DataFrame, model: LdaModel):
     if sort_by != "index":
         objects = objects.sort_values([sort_by], ascending=(sort_by == "title"))
 
-    for _, row in objects.iterrows():
-        with st.expander(row["title"], expanded=False):
-            st.write(row["description"])
+    show_objects(objects)
+
+
+def show_objects(objects: pd.DataFrame):
+    st.subheader("Objects")
+    for idx, row in enumerate(objects.iterrows()):
+        obj = row[1]
+        with st.expander(f"{idx + 1}. {obj['title']}", expanded=False):
+            st.write(obj["description"])
+
+            for url in obj["url"]:
+                st.markdown(f"- [{url}]({url})", unsafe_allow_html=True)
 
 
 def explore_by_entities(data: pd.DataFrame):
     st.header("Explore data by entities")
 
-    entities = []
-    entities_df = data.filter(regex="^entity", axis=1)
-    for label, column in entities_df.iteritems():
-        label = label.split(":")[1]
-        for value in column.dropna().values:
-            entities.extend([f"{label}: {v}" for v in ast.literal_eval(value)])
+    options = np.concatenate(data["entities"].values.tolist()).flat
+    options = sorted(list(set(options)))
 
-    entities = sorted(list(set(entities)))
+    selected = st.multiselect("Select entities", options=options)
+    contains_entities = set(selected).issubset
 
-    st.multiselect("Select entities", options=entities)
-
-
-def show_data(data: pd.DataFrame):
-    st.dataframe(data)
+    objects = data[data["entities"].map(contains_entities)]
+    show_objects(objects)
 
 
 if __name__ == "__main__":
