@@ -69,3 +69,7 @@ def add_topics_to_documents(
         for topic in model.get_document_topics(doc):
             topics_df.loc[idx, f"topic:{topic[0]}"] = topic[1]
     return data.join(topics_df)
+
+
+def get_number_of_topics(model: LdaModel) -> int:
+    return model.get_topics().shape[0]
