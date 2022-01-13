@@ -86,6 +86,15 @@ def get_entities(doc: Doc, entity_types: list[str] = []) -> dict[str, list[str]]
     return entities
 
 
+def get_descriptions(data: pd.DataFrame) -> list[str]:
+    descriptions = data[["title", "description"]].copy()
+    descriptions["text"] = (
+        data["title"].str.cat(data["description"], na_rep="", sep=". ").str.cat(sep="\n")
+    )
+
+    return descriptions["text"].values.tolist()
+
+
 # https://radimrehurek.com/gensim/auto_examples/core/run_core_concepts.html
 def text_corpus(texts: pd.Series) -> list[list[str]]:
     tokens = texts.tolist()
