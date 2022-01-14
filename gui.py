@@ -121,16 +121,43 @@ def sidebar(datadir: str):
     st.header("Generation")
     with st.expander("Generator settings", expanded=False):
         length = st.slider(
-            "Number of words", min_value=10, max_value=1000, step=10, value=100
+            "Number of tokens",
+            min_value=10,
+            max_value=1000,
+            step=10,
+            value=100,
+            help="Maximum number of generated tokens",
         )
         no_repeat_ngram_size = st.slider(
-            "No repeat ngrams", min_value=0, max_value=5, value=2
+            "No repeat ngrams",
+            min_value=0,
+            max_value=5,
+            value=2,
+            help=(
+                "N-gram size that can't occur more than once. "
+                "This helps avoid repetition in the generated text."
+            ),
         )
 
         temperature = st.slider(
-            "Temperature", min_value=0.1, max_value=1.0, step=0.1, value=0.7
+            "Temperature",
+            min_value=0.1,
+            max_value=1.0,
+            step=0.1,
+            value=0.7,
+            help=(
+                "How sensitive the algorithm is to selecting least common options "
+                "for the generated text."
+            ),
         )
-        top_k = st.slider("Top k", min_value=1, max_value=100, step=1, value=50)
+        top_k = st.slider(
+            "Top k",
+            min_value=1,
+            max_value=100,
+            step=1,
+            value=50,
+            help="How many potential outcomes are considered before generating the text",
+        )
         early_stopping = st.checkbox(
             "Stop at last full sentence (if possible)?", value=True
         )
