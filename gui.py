@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pyLDAvis
@@ -5,8 +7,8 @@ import pyLDAvis.gensim_models
 import spacy
 import streamlit as st
 from gensim.models import LdaModel
-from happytransformer import GENSettings, HappyGeneration
 from streamlit import components
+from transformers import GPT2Tokenizer, GPTNeoForCausalLM
 from wordcloud import WordCloud
 
 import cli
@@ -133,8 +135,9 @@ def sidebar(datadir: str):
             "Stop at last full sentence (if possible)?", value=True
         )
 
-        st.session_state.gen_settings = GENSettings(
+        st.session_state.gen_settings = dict(
             do_sample=True,
+            early_stopping=early_stopping,
             no_repeat_ngram_size=no_repeat_ngram_size,
             max_length=length,
             temperature=temperature,
@@ -315,23 +318,38 @@ def generator_section():
         prompt = st.text_input("Prompt", placeholder="Prompt to generate text")
 
         if prompt:
-            result = gm.generate(get_generator(), get_generator_settings(), prompt)
+            result = gm.generate(
+                get_generator_model(),
+                get_generator_tokenizer(),
+                prompt,
+                get_generator_settings(),
+            )
             if result:
-                st.write(result.text)
+                st.write(result)
     except Exception as e:
         st.error(f"Error loading text generator model: {e}")
 
 
-def get_generator(
+def get_generator_model(
     path: str = settings.TEXT_GENERATOR_MODEL_PATH,
-) -> HappyGeneration:
-    if "generator" not in st.session_state:
-        st.session_state.generator = gm.get_generator(path)
+) -> GPTNeoForCausalLM:
+    if "gen_model" not in st.session_state:
+        st.session_state.gen_model = gm.get_model(path)
+        st.session_state.gen_tokenizer = gm.get_tokenizer(path)
 
-    return st.session_state.generator
+    return st.session_state.gen_model
 
 
-def get_generator_settings() -> GENSettings:
+def get_generator_tokenizer(
+    path: str = settings.TEXT_GENERATOR_MODEL_PATH,
+) -> GPT2Tokenizer:
+    if "gen_tokenizer" not in st.session_state:
+        st.session_state.gen_tokenizer = gm.get_tokenizer(path)
+
+    return st.session_state.gen_tokenizer
+
+
+def get_generator_settings() -> dict[str, Any]:
     return st.session_state.gen_settings
 
 

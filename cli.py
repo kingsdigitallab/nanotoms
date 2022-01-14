@@ -1,7 +1,6 @@
 import numpy as np
 import spacy.cli.download as spacy_download
 import typer
-from happytransformer import GENSettings
 from spacy import util
 from tqdm import tqdm
 
@@ -290,26 +289,30 @@ def tune(
 def generate(
     prompt: str,
     do_sample: bool = True,
-    no_repeat_ngram_size: int = 0,
+    early_stopping: bool = False,
+    no_repeat_ngram_size: int = 2,
     max_length: int = 100,
-    temperature: float = 1.0,
+    temperature: float = 0.7,
     top_k: int = 50,
 ):
     try:
-        generator = gm.get_generator(settings.TEXT_GENERATOR_MODEL_PATH)
+        model = gm.get_model(settings.TEXT_GENERATOR_MODEL_PATH)
+        tokenizer = gm.get_tokenizer(settings.TEXT_GENERATOR_MODEL_PATH)
         result = gm.generate(
-            generator,
-            GENSettings(
+            model,
+            tokenizer,
+            prompt,
+            dict(
                 do_sample=do_sample,
+                early_stopping=early_stopping,
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 max_length=max_length,
                 temperature=temperature,
                 top_k=top_k,
             ),
-            prompt,
         )
 
-        typer.echo(result.text)
+        typer.echo(result)
     except Exception as e:
         error(f"Error loading text generator model: {e}")
 
