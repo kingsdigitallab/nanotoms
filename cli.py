@@ -69,7 +69,7 @@ def transform(
     entity_labels: list[str] = settings.SPACY_ENTITY_TYPES,
 ):
     """
-    Transform prepared data into features for modelling.
+    Transform the data. Add new features and apply named entity recognition.
 
     :param datadir: Path to the data directory
     :param spacy_language_model: Name of the spacy language model to use
@@ -142,7 +142,7 @@ def train(
     ),
 ):
     """
-    Train topic model.
+    Train topic model, and assign topics to the data.
 
     :param datadir: Path to the data directory
     :param number_of_topics: Number of topics to be extracted from the data
@@ -209,10 +209,9 @@ def tune(
     ),
 ):
     """
-    Trune topic model. Iterate over different settings to try to improve the
-    trained model. The tuned model may end with a different number of topics from the
-    one provided, because the model settings are tweaked to try to achieve the model
-    with the best score.
+    Train topic model, and assign topics to the data. Iterate over different settings
+    to try to find a model with the best score. This can take a long time to run
+    depending on the minimum and maximum number of topics chosen.
 
     :param datadir: Path to the data directory
     :param number_of_topics: The initial number of topics to be extracted

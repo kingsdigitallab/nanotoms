@@ -68,6 +68,7 @@ def topics_sidebar(datadir: str):
 
     if dm.get_raw_data(datadir) is not None:
         with st.expander("1. Clean/prepare", expanded=False):
+            st.write(get_help(cli.prepare))
             with st.form("prepare_form"):
                 scrape = st.checkbox("Scrape URLs in the data?")
 
@@ -77,6 +78,7 @@ def topics_sidebar(datadir: str):
 
     if dm.get_clean_data(datadir) is not None:
         with st.expander("2. Transform", expanded=False):
+            st.write(get_help(cli.transform))
             language_models = spacy.util.get_installed_models()
             if not language_models:
                 st.warning("No language models available")
@@ -94,12 +96,14 @@ def topics_sidebar(datadir: str):
                     stop_words = st.text_area(
                         "Additional stop words",
                         value=", ".join(settings.SPACY_EXTRA_STOP_WORDS),
+                        help="Words to be excluded from the processing.",
                     )
 
                     labels = st.multiselect(
                         "Select entity labels",
                         options=spacy.load(language_model).get_pipe("ner").labels,
                         default=settings.SPACY_ENTITY_TYPES,
+                        help="Entitly labels to extract.",
                     )
 
                     if st.form_submit_button("Transform data"):
@@ -110,6 +114,7 @@ def topics_sidebar(datadir: str):
 
     if dm.get_transformed_data(datadir) is not None:
         with st.expander("3. Train", expanded=False):
+            st.write(get_help(cli.train))
             with st.form("train_form"):
                 number_of_topics = st.number_input(
                     "Number of topics",
@@ -117,6 +122,7 @@ def topics_sidebar(datadir: str):
                     max_value=20,
                     value=settings.NUMBER_OF_TOPICS,
                     step=1,
+                    help="Number of topics to extract from the data.",
                 )
                 passes = st.number_input(
                     "Passes",
@@ -124,6 +130,7 @@ def topics_sidebar(datadir: str):
                     max_value=50,
                     value=settings.NUMBER_OF_PASSES,
                     step=1,
+                    help="Number of passes through the data during training.",
                 )
                 minimum_probability = st.number_input(
                     "Minimum probability",
@@ -131,13 +138,71 @@ def topics_sidebar(datadir: str):
                     max_value=1.0,
                     step=0.01,
                     value=settings.TOPICS_MINIMUM_PROBABILITY,
+                    help=(
+                        "Topics with a probability lower than this threshold "
+                        " will be excluded."
+                    ),
                 )
 
                 if st.form_submit_button("Train"):
                     with st.spinner("Training"):
                         cli.train(
-                            datadir, number_of_topics, passes, minimum_probability
+                            datadir, number_of_topics, passes, minimum_probability, True
                         )
+
+        with st.expander("3.1 Tune", expanded=False):
+            st.write(get_help(cli.tune))
+            with st.form("tune_form"):
+                min_number_of_topics = st.number_input(
+                    "Minimum number of topics",
+                    min_value=2,
+                    max_value=20,
+                    value=settings.MIN_NUMBER_OF_TOPICS,
+                    step=1,
+                    help="Minimum number of topics to extract from the data.",
+                )
+                max_number_of_topics = st.number_input(
+                    "Maximum number of topics",
+                    min_value=2,
+                    max_value=20,
+                    value=settings.MAX_NUMBER_OF_TOPICS,
+                    step=1,
+                    help="Maximum number of topics to extract from the data.",
+                )
+                passes = st.number_input(
+                    "Passes",
+                    min_value=1,
+                    max_value=50,
+                    value=settings.NUMBER_OF_PASSES,
+                    step=1,
+                    help="Number of passes through the data during training.",
+                )
+                minimum_probability = st.number_input(
+                    "Minimum probability",
+                    min_value=0.01,
+                    max_value=1.0,
+                    step=0.01,
+                    value=settings.TOPICS_MINIMUM_PROBABILITY,
+                    help=(
+                        "Topics with a probability lower than this threshold "
+                        " will be excluded."
+                    ),
+                )
+
+                if st.form_submit_button("Tune"):
+                    with st.spinner("Training"):
+                        cli.tune(
+                            datadir,
+                            min_number_of_topics,
+                            max_number_of_topics,
+                            passes,
+                            minimum_probability,
+                            True,
+                        )
+
+
+def get_help(f) -> str:
+    return f.__doc__.split(":param")[0].strip()
 
 
 def generation_sidebar():
