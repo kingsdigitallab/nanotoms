@@ -297,21 +297,28 @@ def generate(
     try:
         model = gm.get_model(settings.TEXT_GENERATOR_MODEL_PATH)
         tokenizer = gm.get_tokenizer(settings.TEXT_GENERATOR_MODEL_PATH)
-        result = gm.generate(
-            model,
-            tokenizer,
-            prompt,
-            dict(
-                do_sample=do_sample,
-                early_stopping=early_stopping,
-                no_repeat_ngram_size=no_repeat_ngram_size,
-                max_length=max_length,
-                temperature=temperature,
-                top_k=top_k,
-            ),
-        )
 
-        typer.echo(result)
+        generate = True
+        text = prompt
+
+        while generate:
+            text = gm.generate(
+                model,
+                tokenizer,
+                text,
+                dict(
+                    do_sample=do_sample,
+                    early_stopping=early_stopping,
+                    no_repeat_ngram_size=no_repeat_ngram_size,
+                    max_length=max_length,
+                    temperature=temperature,
+                    top_k=top_k,
+                ),
+            )
+
+            typer.echo(text)
+
+            generate = typer.confirm("Continue generating text?")
     except Exception as e:
         error(f"Error loading text generator model: {e}")
 
