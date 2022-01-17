@@ -407,13 +407,20 @@ def explore_section():
 
 
 def explore_by_topic(data: pd.DataFrame, model: LdaModel):
-    st.header("Explore data by topic")
+    st.header("Data by topic")
 
     number_of_topics = tm.get_number_of_topics(model)
-
-    topic = st.slider(
-        "Topic", min_value=0, max_value=number_of_topics - 1, step=1, value=0
+    topics = [
+        ", ".join([term for term, _ in model.show_topic(idx, 15)])
+        for idx in range(number_of_topics)
+    ]
+    topic = st.selectbox(
+        "Select topic", range(len(topics)), format_func=lambda x: f"{x}: {topics[x]}"
     )
+
+    # topic = st.slider(
+    # "Topic", min_value=0, max_value=number_of_topics - 1, step=1, value=0
+    # )
 
     with st.expander("View terms in topic", expanded=False):
         frequencies = {}
@@ -457,7 +464,7 @@ def show_objects(objects: pd.DataFrame):
 
 
 def explore_by_entities(data: pd.DataFrame):
-    st.header("Explore data by entities")
+    st.header("Data by entities")
 
     entities = np.concatenate(data["entities"].values.tolist()).flat
     entities = sorted(list(set(entities)))
@@ -471,36 +478,38 @@ def explore_by_entities(data: pd.DataFrame):
 
 
 def generator_section(datadir: str):
-    st.header("Text generator")
+    st.header("Text generation")
 
-    data = dm.get_final_data(datadir, "10")
-    titles = data["title"].dropna().values.tolist()
-    titles.insert(0, "")
+    if "prompt" not in st.session_state:
+        st.session_state.prompt = ""
 
-    with st.form("generate_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            first_title = st.selectbox("First object", titles)
-        with col2:
-            second_title = st.selectbox("Second object", titles)
-
-        value = ""
-
-        if first_title:
-            value = get_description(data, first_title)
-
-        if second_title:
-            value = f"{value} {get_description(data, second_title)}"
-
+    with st.container():
         prompt = st.text_area(
-            "Prompt", placeholder="Prompt to generate text", value=value
+            "Prompt",
+            placeholder="Prompt to generate text",
         )
 
-        if st.form_submit_button("Generate text"):
-            if prompt:
-                st.write(generate_text(prompt))
-            else:
-                st.warning("Please fill in the prompt field")
+        col1, col2, col3 = st.columns([0.2, 0.125, 1])
+
+        with col1:
+            if st.button("Generate text"):
+                if prompt:
+                    text = generate_text(prompt)
+                    st.session_state.prompt = text
+                else:
+                    st.warning("Please fill in the prompt field")
+
+        with col2:
+            if st.session_state.prompt and st.button("More"):
+                text = generate_text(st.session_state.prompt)
+                st.session_state.prompt = text
+
+        with col3:
+            if st.session_state.prompt and st.button("Clear"):
+                st.session_state.prompt = ""
+
+        if st.session_state.prompt:
+            st.write(st.session_state.prompt)
 
 
 def get_description(data: pd.DataFrame, title: str) -> str:
