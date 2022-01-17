@@ -32,13 +32,21 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
         with st.container():
             trained_section(datadir)
 
+    if show_explore_view():
+        with st.container():
+            explore_section()
+
     if show_generation_view():
         with st.container():
             generator_section(datadir)
 
 
 def show_topics_view():
-    return st.session_state.view == "Topics"
+    return st.session_state.view == "Topic extraction"
+
+
+def show_explore_view():
+    return st.session_state.view == "Explore topic data"
 
 
 def show_generation_view():
@@ -48,10 +56,15 @@ def show_generation_view():
 def sidebar(datadir: str):
     st.title("Configuration")
 
-    st.session_state.view = st.radio("Choose view", ("Topics", "Text generation"))
+    st.session_state.view = st.radio(
+        "Choose view", ("Topic extraction", "Explore topic data", "Text generation")
+    )
 
     if show_topics_view():
         topics_sidebar(datadir)
+
+    if show_explore_view():
+        explore_sidebar(datadir)
 
     if show_generation_view():
         generation_sidebar()
@@ -205,9 +218,29 @@ def get_help(f) -> str:
     return f.__doc__.split(":param")[0].strip()
 
 
+def explore_sidebar(datadir: str):
+    final_data = dm.list_final_data(datadir)
+    if not final_data:
+        return
+
+    st.header("Explore topic data")
+
+    with st.expander("Data", expanded=True):
+        model_name = st.selectbox("Select data", final_data)
+        model_name = "_".join(model_name.split(", ")[0].split("_")[1:])
+
+        data = dm.get_final_data(datadir, model_name)
+        if data is not None:
+            st.session_state.topic_data = data
+
+        model = dm.get_model(datadir, model_name)
+        if model:
+            st.session_state.topic_model = model
+
+
 def generation_sidebar():
     st.header("Generation")
-    with st.expander("Generator settings", expanded=False):
+    with st.expander("Generator settings", expanded=True):
         length = st.slider(
             "Number of tokens",
             min_value=10,
@@ -315,12 +348,6 @@ def trained_section(datadir: str):
     pyldavis(datadir, model, model_name)
     topic_terms_chart(model)
 
-    with st.container():
-        explore_by_topic(data, model)
-
-    with st.container():
-        explore_by_entities(data)
-
 
 def pyldavis(datadir: str, model: LdaModel, model_name: str):
     with st.expander("View model"):
@@ -361,6 +388,22 @@ def topic_terms_chart(model: LdaModel):
 
         df = pd.DataFrame(topics_data).set_index("term")
         st.bar_chart(df)
+
+
+def explore_section():
+    st.header("Explore topic data")
+
+    data = st.session_state.topic_data
+    if data is not None:
+        show_data(data)
+
+    model = st.session_state.topic_model
+
+    with st.container():
+        explore_by_topic(data, model)
+
+    with st.container():
+        explore_by_entities(data)
 
 
 def explore_by_topic(data: pd.DataFrame, model: LdaModel):
@@ -416,14 +459,15 @@ def show_objects(objects: pd.DataFrame):
 def explore_by_entities(data: pd.DataFrame):
     st.header("Explore data by entities")
 
-    options = np.concatenate(data["entities"].values.tolist()).flat
-    options = sorted(list(set(options)))
+    entities = np.concatenate(data["entities"].values.tolist()).flat
+    entities = sorted(list(set(entities)))
 
-    selected = st.multiselect("Select entities", options=options)
-    contains_entities = set(selected).issubset
+    selected = st.multiselect("Select entities", options=entities)
+    if selected:
+        contains_entities = set(selected).issubset
 
-    objects = data[data["entities"].map(contains_entities)]
-    show_objects(objects)
+        objects = data[data["entities"].map(contains_entities)]
+        show_objects(objects)
 
 
 def generator_section(datadir: str):
