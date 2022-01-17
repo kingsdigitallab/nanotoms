@@ -25,18 +25,39 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
     with st.sidebar:
         sidebar(datadir)
 
-    with st.container():
-        data_section(datadir)
+    if show_topics_view():
+        with st.container():
+            data_section(datadir)
 
-    with st.container():
-        trained_section(datadir)
+        with st.container():
+            trained_section(datadir)
 
-    with st.container():
-        generator_section()
+    if show_generation_view():
+        with st.container():
+            generator_section(datadir)
+
+
+def show_topics_view():
+    return st.session_state.view == "Topics"
+
+
+def show_generation_view():
+    return st.session_state.view == "Text generation"
 
 
 def sidebar(datadir: str):
     st.title("Configuration")
+
+    st.session_state.view = st.radio("Choose view", ("Topics", "Text generation"))
+
+    if show_topics_view():
+        topics_sidebar(datadir)
+
+    if show_generation_view():
+        generation_sidebar()
+
+
+def topics_sidebar(datadir: str):
     st.header("Topics")
 
     with st.expander("Data", expanded=False):
@@ -118,6 +139,8 @@ def sidebar(datadir: str):
                             datadir, number_of_topics, passes, minimum_probability
                         )
 
+
+def generation_sidebar():
     st.header("Generation")
     with st.expander("Generator settings", expanded=False):
         length = st.slider(
@@ -338,23 +361,54 @@ def explore_by_entities(data: pd.DataFrame):
     show_objects(objects)
 
 
-def generator_section():
+def generator_section(datadir: str):
     st.header("Text generator")
 
-    try:
-        prompt = st.text_input("Prompt", placeholder="Prompt to generate text")
+    data = dm.get_final_data(datadir, "10")
+    titles = data["title"].dropna().values.tolist()
+    titles.insert(0, "")
 
-        if prompt:
-            result = gm.generate(
-                get_generator_model(),
-                get_generator_tokenizer(),
-                prompt,
-                get_generator_settings(),
-            )
-            if result:
-                st.write(result)
+    with st.form("generate_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            first_title = st.selectbox("First object", titles)
+        with col2:
+            second_title = st.selectbox("Second object", titles)
+
+        value = ""
+
+        if first_title:
+            value = get_description(data, first_title)
+
+        if second_title:
+            value = f"{value} {get_description(data, second_title)}"
+
+        prompt = st.text_area(
+            "Prompt", placeholder="Prompt to generate text", value=value
+        )
+
+        if st.form_submit_button("Generate text"):
+            if prompt:
+                st.write(generate_text(prompt))
+            else:
+                st.warning("Please fill in the prompt field")
+
+
+def get_description(data: pd.DataFrame, title: str) -> str:
+    return data[data["title"] == title].iloc[0]["description"].split(".")[-1].strip()
+
+
+def generate_text(prompt: str) -> str:
+    try:
+        return gm.generate(
+            get_generator_model(),
+            get_generator_tokenizer(),
+            prompt,
+            get_generator_settings(),
+        )
     except Exception as e:
-        st.error(f"Error loading text generator model: {e}")
+        st.error(f"Error generating text: {e}")
+        return "Error"
 
 
 def get_generator_model(
