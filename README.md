@@ -21,7 +21,7 @@ Install [poetry](https://python-poetry.org/docs/#installation) and the requireme
 
 ## Run the gui
 
-    poetry run streamlit run gui.py
+    poetry run streamlit run streamlit_app.py
 
 ## Development
 
