@@ -156,11 +156,24 @@ def topics_sidebar(datadir: str):
                         " will be excluded."
                     ),
                 )
+                multicore = st.checkbox(
+                    "Multiprocessing",
+                    value=True,
+                    help=(
+                        "Use multiprocessing to speed up training process. "
+                        "Turn off in streamlit cloud or if having issues training."
+                    ),
+                )
 
                 if st.form_submit_button("Train"):
                     with st.spinner("Training"):
                         cli.train(
-                            datadir, number_of_topics, passes, minimum_probability, True
+                            datadir,
+                            number_of_topics,
+                            passes,
+                            minimum_probability,
+                            multicore,
+                            True,
                         )
 
         with st.expander("3.1 Tune", expanded=False):
@@ -201,6 +214,14 @@ def topics_sidebar(datadir: str):
                         " will be excluded."
                     ),
                 )
+                multicore = st.checkbox(
+                    "Multiprocessing",
+                    value=True,
+                    help=(
+                        "Use multiprocessing to speed up training process. "
+                        "Turn off in streamlit cloud or if having issues training."
+                    ),
+                )
 
                 if st.form_submit_button("Tune"):
                     with st.spinner("Training"):
@@ -210,6 +231,7 @@ def topics_sidebar(datadir: str):
                             max_number_of_topics,
                             passes,
                             minimum_probability,
+                            multicore,
                             True,
                         )
 

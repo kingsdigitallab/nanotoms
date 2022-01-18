@@ -135,6 +135,7 @@ def train(
     number_of_topics: int = settings.NUMBER_OF_TOPICS,
     passes: int = settings.NUMBER_OF_PASSES,
     minimum_probability: float = settings.TOPICS_MINIMUM_PROBABILITY,
+    multicore: bool = True,
     show: bool = typer.Option(
         ...,
         prompt="Print topics",
@@ -169,6 +170,7 @@ def train(
             passes=passes,
             num_topics=number_of_topics,
             minimum_probability=minimum_probability,
+            multicore=multicore,
         )
         model.save(dm.get_model_path(datadir, f"{number_of_topics}").as_posix())
         progress.update(1)

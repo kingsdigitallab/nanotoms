@@ -17,8 +17,13 @@ def model(
     alpha: Optional[Union[float, npt.ArrayLike, str]] = "symmetric",
     eta: Optional[Union[float, npt.ArrayLike, str]] = None,
     minimum_probability: float = 0.01,
-) -> LdaMulticore:
-    return LdaMulticore(
+    multicore: bool = True,
+) -> LdaModel:
+    model_class = LdaModel
+    if multicore:
+        model_class = LdaMulticore
+
+    return model_class(
         corpus=bow_corpus,
         id2word=dict_corpus,
         passes=passes,
