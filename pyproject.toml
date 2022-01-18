@@ -23,6 +23,7 @@ pyLDAvis = "^3.3.1"
 wordcloud = "^1.8.1"
 transformers = "^4.15.0"
 torch = "^1.10.1"
+en-core-web-md = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.2.0/en_core_web_md-3.2.0.tar.gz#egg=en_core_web_md"}
 
 [tool.poetry.dev-dependencies]
 autoflake = "*"
