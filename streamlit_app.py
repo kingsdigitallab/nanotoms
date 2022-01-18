@@ -46,7 +46,7 @@ def show_topics_view():
 
 
 def show_explore_view():
-    return st.session_state.view == "Explore topic data"
+    return st.session_state.view == "Explore data"
 
 
 def show_generation_view():
@@ -57,7 +57,7 @@ def sidebar(datadir: str):
     st.title("Configuration")
 
     st.session_state.view = st.radio(
-        "Choose view", ("Topic extraction", "Explore topic data", "Text generation")
+        "Choose view", ("Topic extraction", "Explore data", "Text generation")
     )
 
     if show_topics_view():
@@ -246,7 +246,7 @@ def explore_sidebar(datadir: str):
         st.warning("No data available! Please perform topic extraction first.")
         return
 
-    st.header("Explore topic data")
+    st.header("Explore data")
 
     with st.expander("Data", expanded=True):
         model_name = st.selectbox("Select data", final_data)
@@ -254,6 +254,9 @@ def explore_sidebar(datadir: str):
 
         data = dm.get_final_data(datadir, model_name)
         if data is not None:
+            for c in ["theme", "type"]:
+                data[c] = data[c].apply(lambda x: [x])
+
             st.session_state.topic_data = data
 
         model = dm.get_model(datadir, model_name)
@@ -432,26 +435,28 @@ def topic_terms_chart(model: LdaModel):
 
 
 def explore_section():
-    st.header("Explore topic data")
-
     if "topic_data" in st.session_state:
         data = st.session_state.topic_data
         if data is not None:
             with st.expander("View trained data", expanded=False):
                 show_data(data, "trained")
 
+        st.header("Explore data")
+
         model = st.session_state.topic_model
 
-        with st.container():
-            explore_by_topic(data, model)
+        explore_by = st.selectbox(
+            "Explore data by", ["theme", "type", "tags", "entities", "topic"]
+        )
 
         with st.container():
-            explore_by_entities(data)
+            if explore_by == "topic":
+                explore_by_topic(data, model)
+            else:
+                explore_data(data, explore_by)
 
 
 def explore_by_topic(data: pd.DataFrame, model: LdaModel):
-    st.subheader("Data by topic")
-
     number_of_topics = tm.get_number_of_topics(model)
     topics = [
         ", ".join([term for term, _ in model.show_topic(idx, 15)])
@@ -502,17 +507,23 @@ def show_objects(objects: pd.DataFrame):
                 st.markdown(f"- [{url}]({url})", unsafe_allow_html=True)
 
 
-def explore_by_entities(data: pd.DataFrame):
-    st.subheader("Data by entities")
+def explore_data(data: pd.DataFrame, column: str):
+    select_input = st.multiselect
+    if column in ["theme", "type"]:
+        select_input = st.selectbox
 
-    entities = np.concatenate(data["entities"].values.tolist()).flat
-    entities = sorted(list(set(entities)))
+    options = data[column].dropna().values.tolist()
+    options = np.concatenate(options).flat
+    options = sorted(list(set(options)))
 
-    selected = st.multiselect("Select entities", options=entities)
+    selected = select_input(f"Select {column}", options=options)
     if selected:
-        contains_entities = set(selected).issubset
+        if isinstance(selected, str):
+            selected = [selected]
 
-        objects = data[data["entities"].map(contains_entities)]
+        contains_option = set(selected).issubset
+
+        objects = data[data[column].map(contains_option)]
         show_objects(objects)
 
 

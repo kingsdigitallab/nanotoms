@@ -130,7 +130,11 @@ def get_model_id2word(datadir: str, suffix: str) -> corpora.Dictionary:
 def get_final_data(datadir: str, suffix: str) -> Optional[pd.DataFrame]:
     return get_data(
         get_final_data_path(datadir, suffix),
-        dict(converters=dict(url=ast.literal_eval, entities=ast.literal_eval)),
+        dict(
+            converters=dict(
+                tags=ast.literal_eval, url=ast.literal_eval, entities=ast.literal_eval
+            )
+        ),
     )
 
 
