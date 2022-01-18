@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -324,7 +324,7 @@ def data_section(datadir: str):
             f"View raw data, {dm.lastModified(dm.get_raw_data_path(datadir))}",
             expanded=False,
         ):
-            show_data(data)
+            show_data(data, "raw")
 
     data = dm.get_clean_data(datadir)
     if data is not None:
@@ -334,18 +334,36 @@ def data_section(datadir: str):
             f"View cleaned/prepared data, {modified}",
             expanded=False,
         ):
-            show_data(data)
+            show_data(data, "prepared")
 
     data = dm.get_transformed_data(datadir)
     if data is not None:
         modified = dm.lastModified(dm.get_transformed_data_path(datadir))
 
         with st.expander(f"View transformed data, {modified}", expanded=False):
-            show_data(data)
+            show_data(data, "transformed")
 
 
-def show_data(data: pd.DataFrame):
+def show_data(data: pd.DataFrame, label: str):
     st.dataframe(data)
+    download_data(data, label)
+
+
+def download_data(data: pd.DataFrame, label: str):
+    csv = to_csv(data)
+
+    if csv:
+        st.download_button(
+            label=f"Download {label} data as CSV",
+            data=csv,
+            file_name=f"{label}.csv",
+            mime="text/csv",
+        )
+
+
+@st.cache
+def to_csv(data: pd.DataFrame) -> Optional[str]:
+    return data.to_csv(index=False, encoding="utf-8")
 
 
 def trained_section(datadir: str):
@@ -361,7 +379,7 @@ def trained_section(datadir: str):
     with st.expander("View data", expanded=False):
         data = dm.get_final_data(datadir, model_name)
         if data is not None:
-            show_data(data)
+            show_data(data, "trained")
 
     model = dm.get_model(datadir, model_name)
     if not model:
@@ -417,7 +435,8 @@ def explore_section():
 
     data = st.session_state.topic_data
     if data is not None:
-        show_data(data)
+        with st.expander("View trained data", expanded=False):
+            show_data(data, "trained")
 
     model = st.session_state.topic_model
 
@@ -429,7 +448,7 @@ def explore_section():
 
 
 def explore_by_topic(data: pd.DataFrame, model: LdaModel):
-    st.header("Data by topic")
+    st.subheader("Data by topic")
 
     number_of_topics = tm.get_number_of_topics(model)
     topics = [
@@ -439,10 +458,6 @@ def explore_by_topic(data: pd.DataFrame, model: LdaModel):
     topic = st.selectbox(
         "Select topic", range(len(topics)), format_func=lambda x: f"{x}: {topics[x]}"
     )
-
-    # topic = st.slider(
-    # "Topic", min_value=0, max_value=number_of_topics - 1, step=1, value=0
-    # )
 
     with st.expander("View terms in topic", expanded=False):
         frequencies = {}
@@ -486,7 +501,7 @@ def show_objects(objects: pd.DataFrame):
 
 
 def explore_by_entities(data: pd.DataFrame):
-    st.header("Data by entities")
+    st.subheader("Data by entities")
 
     entities = np.concatenate(data["entities"].values.tolist()).flat
     entities = sorted(list(set(entities)))
