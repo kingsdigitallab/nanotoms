@@ -243,6 +243,7 @@ def get_help(f) -> str:
 def explore_sidebar(datadir: str):
     final_data = dm.list_final_data(datadir)
     if not final_data:
+        st.warning("No data available! Please perform topic extraction first.")
         return
 
     st.header("Explore topic data")
@@ -433,18 +434,19 @@ def topic_terms_chart(model: LdaModel):
 def explore_section():
     st.header("Explore topic data")
 
-    data = st.session_state.topic_data
-    if data is not None:
-        with st.expander("View trained data", expanded=False):
-            show_data(data, "trained")
+    if "topic_data" in st.session_state:
+        data = st.session_state.topic_data
+        if data is not None:
+            with st.expander("View trained data", expanded=False):
+                show_data(data, "trained")
 
-    model = st.session_state.topic_model
+        model = st.session_state.topic_model
 
-    with st.container():
-        explore_by_topic(data, model)
+        with st.container():
+            explore_by_topic(data, model)
 
-    with st.container():
-        explore_by_entities(data)
+        with st.container():
+            explore_by_entities(data)
 
 
 def explore_by_topic(data: pd.DataFrame, model: LdaModel):
