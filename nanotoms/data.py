@@ -10,7 +10,7 @@ from gensim import corpora
 from gensim.models import LdaModel
 
 
-def get_raw_data(datadir: str) -> pd.DataFrame:
+def get_raw_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(get_raw_data_path(datadir))
 
 
@@ -45,11 +45,14 @@ def get_data_path(
     return path
 
 
-def get_data(filename: Path, kwargs: dict = {}) -> pd.DataFrame:
-    return pd.read_csv(filename, **kwargs)  # type: ignore
+def get_data(filename: Path, kwargs: dict = {}) -> Optional[pd.DataFrame]:
+    try:
+        return pd.read_csv(filename, **kwargs)  # type: ignore
+    except FileNotFoundError:
+        return None
 
 
-def get_clean_data(datadir: str) -> pd.DataFrame:
+def get_clean_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(
         get_clean_data_path(datadir), dict(converters=dict(tags=ast.literal_eval))
     )
@@ -63,7 +66,7 @@ def get_scraped_data_path(datadir: str) -> Path:
     return get_data_path(datadir, "0_external", "scraped.json")
 
 
-def get_extracted_data(datadir: str) -> pd.DataFrame:
+def get_extracted_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(get_extracted_data_path(datadir))
 
 
@@ -71,7 +74,7 @@ def get_extracted_data_path(datadir: str) -> Path:
     return get_data_path(datadir, "1_interim", "extracted.csv")
 
 
-def get_transformed_data(datadir: str) -> pd.DataFrame:
+def get_transformed_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(
         get_transformed_data_path(datadir),
         dict(converters=dict(entities=ast.literal_eval)),
@@ -124,7 +127,7 @@ def get_model_id2word(datadir: str, suffix: str) -> corpora.Dictionary:
     )
 
 
-def get_final_data(datadir: str, suffix: str) -> pd.DataFrame:
+def get_final_data(datadir: str, suffix: str) -> Optional[pd.DataFrame]:
     return get_data(
         get_final_data_path(datadir, suffix),
         dict(converters=dict(url=ast.literal_eval, entities=ast.literal_eval)),
