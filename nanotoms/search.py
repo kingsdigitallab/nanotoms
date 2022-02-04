@@ -24,13 +24,15 @@ def get_embeddings(path: Optional[str]) -> Embeddings:
     return embeddings
 
 
-def search(data: pd.DataFrame, embeddings: Embeddings, query: str, limit: int = 10):
+def search(
+    data: pd.DataFrame, embeddings: Embeddings, query: str, limit: int = 10
+) -> pd.DataFrame:
     docs = embeddings.search(query, limit)
 
     index = [d[0] for d in docs]
     scores = [d[1] for d in docs]
 
-    found = data[data.index.isin(index)]
+    found = data[data.index.isin(index)].copy()
     found["score"] = scores
 
     return found
