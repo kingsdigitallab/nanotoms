@@ -84,7 +84,7 @@ def transform(
 
         spacy(language_model)
 
-    with tqdm(total=6, desc="Adding features to data...") as progress:
+    with tqdm(total=7, desc="Adding features to data...") as progress:
         cleaned_df = dm.get_clean_data(datadir)
         progress.update(1)
 
@@ -117,6 +117,14 @@ def transform(
 
         bow_corpus = fm.bow_corpus(text_corpus, dict_corpus)
         dm.dump_data(dm.get_bow_corpus_path(datadir), bow_corpus)
+        progress.update(1)
+
+        inventory_data_path = dm.get_raw_inventory_data_path(datadir)
+        if inventory_data_path.is_file():
+            inventories = fm.get_inventories(inventory_data_path.as_posix())
+            inventory_data_path = dm.get_inventory_data_path(datadir)
+            with open(inventory_data_path, "w") as f:
+                f.writelines(inventories)
         progress.update(1)
 
 

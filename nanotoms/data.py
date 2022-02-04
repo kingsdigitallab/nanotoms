@@ -74,6 +74,12 @@ def get_extracted_data(datadir: str) -> Optional[pd.DataFrame]:
 def get_extracted_data_path(datadir: str) -> Path:
     return get_data_path(datadir, "1_interim", "extracted.csv")
 
+def get_raw_inventory_data_path(datadir: str) -> Path:
+    return get_data_path(datadir, "0_raw", "inventory.xlsx")
+
+def get_inventory_data_path(datadir: str) -> Path:
+    return get_data_path(datadir, "1_interim", "inventory.txt")
+
 
 def get_transformed_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(
