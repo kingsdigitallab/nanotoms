@@ -83,3 +83,5 @@ TOPICS_MINIMUM_PROBABILITY: float = 1 / NUMBER_OF_TOPICS * 1.5
 COHERENCE_MEASURE: str = "c_v"
 
 TEXT_GENERATOR_MODEL_PATH = DATA_DIR.joinpath("gpt-neo-125M-nanotoms")
+
+API_ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8000"]
