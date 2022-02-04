@@ -305,6 +305,18 @@ def generate(
     temperature: float = 0.7,
     top_k: int = 50,
 ):
+    """
+    Generate text based on the given prompt.
+
+    :param prompt: Prompt to generate text for
+    :param do_sample: Choose words based on their conditional probability?
+    :param early_stopping: Stop at last full sentence (if possible)?
+    :param no_repeat_ngram_size: N-gram size that can't occur more than once
+    :param max_length: Maximum length of the generated text
+    :param temperature: How sensitive the algorithm is to selecting least common
+                        optionsfor the generated text
+    :param top_k: How many potential outcomes are considered before generating the text
+    """
     try:
         model = gm.get_model(settings.TEXT_GENERATOR_MODEL_PATH)
         tokenizer = gm.get_tokenizer(settings.TEXT_GENERATOR_MODEL_PATH)
@@ -363,6 +375,10 @@ def search(
     """
     Find objects in the data using a semantic search, finds by meaning as well as by
     keyword.
+
+    :param datadir: Path to the data directory
+    :param query: The query to search for
+    :param limit: Maximum number of results to return
     """
     with tqdm(total=3, desc=f"Searching for {query}...") as progress:
         data = dm.get_transformed_data(datadir)
