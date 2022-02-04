@@ -9,6 +9,7 @@ from nanotoms import data as dm
 from nanotoms import etl
 from nanotoms import features as fm
 from nanotoms import generate as gm
+from nanotoms import search as sm
 from nanotoms import train as tm
 from nanotoms import visualize as vm
 
@@ -323,6 +324,49 @@ def generate(
             generate = typer.confirm("Continue generating text?")
     except Exception as e:
         error(f"Error loading text generator model: {e}")
+
+
+@app.command()
+def index(
+    datadir: str = settings.DATA_DIR.name,
+):
+    """
+    Index the data for semantic search.
+
+    :param datadir: Path to the data directory
+    """
+    with tqdm(total=3, desc="Indexing data...") as progress:
+        data = dm.get_transformed_data(datadir)
+        progress.update(1)
+
+        embeddings = sm.index(data)
+        progress.update(1)
+
+        embeddings.save(dm.get_embeddings_path(datadir).as_posix())
+        progress.update(1)
+
+
+@app.command()
+def search(
+    datadir: str = settings.DATA_DIR.name,
+    query: str = "",
+    limit: int = 5,
+):
+    """
+    Find objects in the data using a semantic search, finds by meaning as well as by
+    keyword.
+    """
+    with tqdm(total=3, desc=f"Searching for {query}...") as progress:
+        data = dm.get_transformed_data(datadir)
+        progress.update(1)
+
+        embeddings = sm.get_embeddings(dm.get_embeddings_path(datadir).as_posix())
+        progress.update(1)
+
+        found = sm.search(data, embeddings, query, limit)
+        progress.update(1)
+
+        typer.echo(found)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ import cli
 import settings
 from nanotoms import data as dm
 from nanotoms import generate as gm
+from nanotoms import search as sm
 from nanotoms import train as tm
 
 
@@ -36,6 +37,10 @@ def streamlit(datadir: str = settings.DATA_DIR.name):
         with st.container():
             explore_section()
 
+    if show_search_view():
+        with st.container():
+            search_section(datadir)
+
     if show_generation_view():
         with st.container():
             generator_section(datadir)
@@ -49,6 +54,10 @@ def show_explore_view():
     return st.session_state.view == "Explore data"
 
 
+def show_search_view():
+    return st.session_state.view == "Semantic search"
+
+
 def show_generation_view():
     return st.session_state.view == "Text generation"
 
@@ -57,7 +66,8 @@ def sidebar(datadir: str):
     st.title("Configuration")
 
     st.session_state.view = st.radio(
-        "Choose view", ("Topic extraction", "Explore data", "Text generation")
+        "Choose view",
+        ("Topic extraction", "Explore data", "Semantic search", "Text generation"),
     )
 
     if show_topics_view():
@@ -501,6 +511,9 @@ def show_objects(objects: pd.DataFrame):
     for idx, row in enumerate(objects.iterrows()):
         obj = row[1]
         with st.expander(f"{idx + 1}. {obj['title']}", expanded=False):
+            if "score" in obj:
+                st.write(obj["score"])
+
             st.write(obj["description"])
 
             for url in obj["url"]:
@@ -525,6 +538,16 @@ def explore_data(data: pd.DataFrame, column: str):
 
         objects = data[data[column].map(contains_option)]
         show_objects(objects)
+
+
+def search_section(datadir: str):
+    st.header("Semantic search")
+
+    query = st.text_input("Query")
+    if st.button("Search"):
+        e = sm.get_embeddings(dm.get_embeddings_path(datadir).as_posix())
+        found = sm.search(dm.get_transformed_data(datadir), e, query)
+        show_objects(found)
 
 
 def generator_section(datadir: str):

@@ -81,4 +81,5 @@ TOPICS_MINIMUM_PROBABILITY: float = 1 / NUMBER_OF_TOPICS * 1.5
 # https://radimrehurek.com/gensim/models/coherencemodel.html#gensim.models.coherencemodel.CoherenceModel
 # one of 'c_v', 'c_uci', 'c_npmi'
 COHERENCE_MEASURE: str = "c_v"
+
 TEXT_GENERATOR_MODEL_PATH = DATA_DIR.joinpath("gpt-neo-125M-nanotoms")

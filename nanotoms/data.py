@@ -8,6 +8,7 @@ from typing import Optional
 import pandas as pd
 from gensim import corpora
 from gensim.models import LdaModel
+from txtai.embeddings import Embeddings
 
 
 def get_raw_data(datadir: str) -> Optional[pd.DataFrame]:
@@ -77,7 +78,11 @@ def get_extracted_data_path(datadir: str) -> Path:
 def get_transformed_data(datadir: str) -> Optional[pd.DataFrame]:
     return get_data(
         get_transformed_data_path(datadir),
-        dict(converters=dict(entities=ast.literal_eval)),
+        dict(
+            converters=dict(
+                tags=ast.literal_eval, url=ast.literal_eval, entities=ast.literal_eval
+            )
+        ),
     )
 
 
@@ -167,3 +172,7 @@ def lastModified(filepath: Path) -> str:
     return (
         f"last modified: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(modified))}"
     )
+
+
+def get_embeddings_path(datadir: str) -> Path:
+    return get_data_path(datadir, "2_final", "embeddings")
