@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Function to extract inventories and wills from data and convert them to text to be
   used to train the generator model.
 - API for text generation and semantic search.
+- [Dockerfile](https://docs.docker.com/) for API deployment.
+- Scripts to start the API, Docker and Streamlit apps.
 
 ## [0.1.0] - 2022-01-10
 
