@@ -14,12 +14,14 @@ def index(data: pd.DataFrame) -> Embeddings:
 
 
 def get_embeddings(path: Optional[str]) -> Embeddings:
-    embeddings = Embeddings(
-        dict(path="sentence-transformers/all-MiniLM-L6-v2", backend="annoy")
-    )
+    embeddings = Embeddings()
 
     if path and embeddings.exists(path):
         embeddings.load(path)
+    else:
+        embeddings = Embeddings(
+            dict(path="sentence-transformers/all-MiniLM-L6-v2", backend="annoy")
+        )
 
     return embeddings
 
