@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API for text generation and semantic search.
 - [Dockerfile](https://docs.docker.com/) for API deployment.
 - Scripts to start the API, Docker and Streamlit apps.
+- [Mermaid](https://mermaid-js.github.io/) flowchart to the [README](README.md).
+- [bumpversion](https://github.com/c4urself/bump2version) configuration.
 
 ## [0.1.0] - 2022-01-10
 
