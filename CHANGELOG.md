@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - yyyy-mm-dd
 
+## Added
+
+- Word embeddings to version control.
+
 ## [0.2.1] - 2022-03-10
 
 ### Fixed
