@@ -213,6 +213,7 @@ def tune(
     max_number_of_topics: int = settings.MAX_NUMBER_OF_TOPICS,
     passes: int = settings.NUMBER_OF_PASSES,
     minimum_probability: float = settings.TOPICS_MINIMUM_PROBABILITY,
+    multicore: bool = True,
     show: bool = typer.Option(
         ...,
         prompt="Print topics",
@@ -259,6 +260,7 @@ def tune(
                     alpha=alpha,
                     eta=eta,
                     minimum_probability=minimum_probability,
+                    multicore=multicore,
                 )
 
                 score = tm.coherence_score(

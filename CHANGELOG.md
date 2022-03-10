@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - yyyy-mm-dd
 
+### Fixed
+
+- Call to topic extraction tune command from the streamlit app.
+
 ## [0.2.0] - 2022-03-10
 
 ### Added
